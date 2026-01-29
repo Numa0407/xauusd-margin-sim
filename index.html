@@ -3,31 +3,41 @@ index.html
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>XAU/USD 証拠金シミュレーター</title>
+<title>XAU/JPY 証拠金シミュレーター（スマホ対応版）</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-  body { font-family: Arial, sans-serif; max-width: 600px; margin: 20px auto; }
-  label { display: block; margin-top: 10px; }
-  input, select, button { margin-top: 5px; width: 100%; padding: 5px; }
-  .result { margin-top: 15px; padding: 10px; border: 1px solid #ccc; background: #f9f9f9; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; max-width: 650px; margin: 20px auto; background: #f2f2f2; padding: 0 10px; }
+  h2 { text-align: center; color: #333; font-size: 1.5em; }
+  label { display: block; margin-top: 12px; font-weight: bold; color: #333; font-size: 1em; }
+  input, select, button { margin-top: 5px; width: 100%; padding: 12px; font-size: 1em; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
+  input:focus, select:focus { border-color: #007bff; outline: none; }
+  button { background-color: #007bff; color: #fff; border: none; cursor: pointer; transition: 0.2s; }
+  button:hover { background-color: #0056b3; }
+  .result { margin-top: 20px; padding: 15px; border: 2px solid #007bff; background: #e6f0ff; border-radius: 8px; font-size: 1em; line-height: 1.5; word-wrap: break-word; }
+  .required { color: red; }
+  small { color: #666; font-weight: normal; font-size: 0.9em; }
+  @media (max-width: 400px) {
+    input, select, button { font-size: 0.95em; padding: 10px; }
+    h2 { font-size: 1.3em; }
+  }
 </style>
 </head>
 <body>
 
 <h2>XAU/JPY 証拠金シミュレーター</h2>
 
-<!-- 必須項目 -->
-<label>純資産額 (円)
+<label>純資産額 (円) <span class="required">*</span>
   <input type="number" id="capital" placeholder="例: 1000000">
 </label>
 
-<label>買い / 売り
+<label>買い / 売り <span class="required">*</span>
   <select id="position">
     <option value="buy">買い</option>
     <option value="sell">売り</option>
   </select>
 </label>
 
-<label>最大レバレッジ
+<label>最大レバレッジ <span class="required">*</span>
   <select id="leverage">
     <option value="1">1倍</option>
     <option value="2">2倍</option>
@@ -42,12 +52,12 @@ index.html
   </select>
 </label>
 
-<label>レート (円)
-  <input type="number" id="rateInput" placeholder="レートを取得" step="0.01">
-  <button type="button" onclick="getCurrentRate()">現在レート取得</button>
+<label>レート (円) <span class="required">*</span>
+  <input type="number" id="rateInput" placeholder="例: 5555.00" step="0.01">
+  <small>XM JPY口座想定</small>
 </label>
 
-<label>取引数量 (ロット)
+<label>取引数量 (ロット) <span class="required">*</span>
   <input type="number" id="lot" placeholder="例: 0.1" step="0.01">
 </label>
 
@@ -60,7 +70,6 @@ index.html
   </select>
 </label>
 
-<!-- 任意項目 -->
 <label>利確 (pips)
   <input type="number" id="takeProfit" placeholder="任意">
 </label>
@@ -74,20 +83,6 @@ index.html
 <div class="result" id="result"></div>
 
 <script>
-// 自動レート取得
-async function getCurrentRate() {
-  try {
-    const response = await fetch("https://api.exchangerate.host/convert?from=XAU&to=JPY");
-    const data = await response.json();
-    const rate = data.info.rate;
-    document.getElementById("rateInput").value = rate.toFixed(2);
-  } catch (error) {
-    alert("レート取得に失敗しました。手動入力してください");
-    console.error(error);
-  }
-}
-
-// 証拠金計算
 function calculate() {
   const capital = parseFloat(document.getElementById("capital").value);
   const lot = parseFloat(document.getElementById("lot").value);
@@ -102,42 +97,40 @@ function calculate() {
     return;
   }
 
-  // 必要証拠金
-  const contractSize = 100; // XAUは通常100oz/lot
+  const contractSize = 100;
   const requiredMargin = (lot * contractSize * rate) / leverage;
-  const totalMargin = requiredMargin; // 今回は単一ポジション
+  const totalMargin = requiredMargin;
   const maintenanceRate = marginRate / 100;
   const maintenanceMargin = totalMargin * maintenanceRate;
 
-  // ロスカットレート・損失
   const position = document.getElementById("position").value;
   let liquidationRate, liquidationLoss;
   if (position === "buy") {
-    liquidationRate = rate - (capital - maintenanceMargin)/(lot*contractSize);
+    liquidationRate = rate - (capital - maintenanceMargin) / (lot * contractSize);
     liquidationLoss = capital - maintenanceMargin;
   } else {
-    liquidationRate = rate + (capital - maintenanceMargin)/(lot*contractSize);
+    liquidationRate = rate + (capital - maintenanceMargin) / (lot * contractSize);
     liquidationLoss = capital - maintenanceMargin;
   }
 
   let resultText = `
-    必要証拠金: ${requiredMargin.toFixed(0)} 円<br>
-    合計必要証拠金: ${totalMargin.toFixed(0)} 円<br>
-    維持率100%レート: ${rate.toFixed(2)} 円<br>
-    維持率100%損失: ${capital.toFixed(0)} 円<br>
-    ロスカットレート: ${liquidationRate.toFixed(2)} 円<br>
-    ロスカット損失: ${liquidationLoss.toFixed(0)} 円<br>
-    レバレッジ: ${leverage}倍
+    <b>必要証拠金:</b> ${requiredMargin.toFixed(0)} 円<br>
+    <b>合計必要証拠金:</b> ${totalMargin.toFixed(0)} 円<br>
+    <b>維持率100%レート:</b> ${rate.toFixed(2)} 円<br>
+    <b>維持率100%損失:</b> ${capital.toFixed(0)} 円<br>
+    <b>ロスカットレート:</b> ${liquidationRate.toFixed(2)} 円<br>
+    <b>ロスカット損失:</b> ${liquidationLoss.toFixed(0)} 円<br>
+    <b>レバレッジ:</b> ${leverage}倍
   `;
 
   if (!isNaN(tp)) {
-    const profit = lot * contractSize * (tp / 0.01); // pips計算
-    resultText += `<br>利確pips利益: ${profit.toFixed(0)} 円`;
+    const profit = lot * contractSize * (tp / 0.01);
+    resultText += `<br><b>利確pips利益:</b> ${profit.toFixed(0)} 円`;
   }
 
   if (!isNaN(sl)) {
     const loss = lot * contractSize * (sl / 0.01);
-    resultText += `<br>損切りpips損失: ${loss.toFixed(0)} 円`;
+    resultText += `<br><b>損切りpips損失:</b> ${loss.toFixed(0)} 円`;
   }
 
   document.getElementById("result").innerHTML = resultText;
