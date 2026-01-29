@@ -3,7 +3,7 @@ index.html
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>XAU/USD 証拠金シミュレーター（手動入力・スマホ対応）</title>
+<title>XAU/USD 証拠金シミュレーター（円換算対応）</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
   body { font-family: 'Segoe UI', Arial, sans-serif; max-width: 650px; margin: 20px auto; background: #f2f2f2; padding: 0 10px; }
@@ -24,7 +24,7 @@ index.html
 </head>
 <body>
 
-<h2>XAU/USD 証拠金シミュレーター</h2>
+<h2>XAU/USD 証拠金シミュレーター（円換算）</h2>
 
 <label>純資産額 (USD) <span class="required">*</span>
   <input type="number" id="capital" placeholder="例: 10000">
@@ -52,9 +52,14 @@ index.html
   </select>
 </label>
 
-<label>レート (USD) <span class="required">*</span>
-  <input type="number" id="rateInput" placeholder="例: 1950.00" step="0.01">
-  <small>XM USD口座想定</small>
+<label>XAU/USD レート <span class="required">*</span>
+  <input type="number" id="xauRate" placeholder="例: 1950.00" step="0.01">
+  <small>金の現在レート（USD/oz）を手入力</small>
+</label>
+
+<label>USD/JPY レート <span class="required">*</span>
+  <input type="number" id="usdRate" placeholder="例: 153.00" step="0.01">
+  <small>円換算用レート</small>
 </label>
 
 <label>取引数量 (ロット) <span class="required">*</span>
@@ -87,18 +92,19 @@ function calculate() {
   const capital = parseFloat(document.getElementById("capital").value);
   const lot = parseFloat(document.getElementById("lot").value);
   const leverage = parseFloat(document.getElementById("leverage").value);
-  const rate = parseFloat(document.getElementById("rateInput").value);
+  const xauRate = parseFloat(document.getElementById("xauRate").value);
+  const usdRate = parseFloat(document.getElementById("usdRate").value);
   const marginRate = parseFloat(document.getElementById("marginRate").value);
   const tp = parseFloat(document.getElementById("takeProfit").value);
   const sl = parseFloat(document.getElementById("stopLoss").value);
 
-  if (!capital || !lot || !rate) {
+  if (!capital || !lot || !xauRate || !usdRate) {
     alert("必須項目を入力してください");
     return;
   }
 
-  const contractSize = 100; // XAUは100oz/lot
-  const requiredMargin = (lot * contractSize * rate) / leverage;
+  const contractSize = 100; // 1ロット = 100oz
+  const requiredMargin = (lot * contractSize * xauRate) / leverage;
   const totalMargin = requiredMargin;
   const maintenanceRate = marginRate / 100;
   const maintenanceMargin = totalMargin * maintenanceRate;
@@ -106,17 +112,17 @@ function calculate() {
   const position = document.getElementById("position").value;
   let liquidationRate, liquidationLoss;
   if (position === "buy") {
-    liquidationRate = rate - (capital - maintenanceMargin) / (lot * contractSize);
+    liquidationRate = xauRate - (capital - maintenanceMargin) / (lot * contractSize);
     liquidationLoss = capital - maintenanceMargin;
   } else {
-    liquidationRate = rate + (capital - maintenanceMargin) / (lot * contractSize);
+    liquidationRate = xauRate + (capital - maintenanceMargin) / (lot * contractSize);
     liquidationLoss = capital - maintenanceMargin;
   }
 
   let resultText = `
     <b>必要証拠金:</b> ${requiredMargin.toFixed(2)} USD<br>
     <b>合計必要証拠金:</b> ${totalMargin.toFixed(2)} USD<br>
-    <b>維持率100%レート:</b> ${rate.toFixed(2)} USD<br>
+    <b>維持率100%レート:</b> ${xauRate.toFixed(2)} USD<br>
     <b>維持率100%損失:</b> ${capital.toFixed(2)} USD<br>
     <b>ロスカットレート:</b> ${liquidationRate.toFixed(2)} USD<br>
     <b>ロスカット損失:</b> ${liquidationLoss.toFixed(2)} USD<br>
@@ -124,13 +130,15 @@ function calculate() {
   `;
 
   if (!isNaN(tp)) {
-    const profit = lot * contractSize * (tp / 0.01);
-    resultText += `<br><b>利確pips利益:</b> ${profit.toFixed(2)} USD`;
+    const profitUSD = lot * contractSize * (tp / 0.01);
+    const profitJPY = profitUSD * usdRate;
+    resultText += `<br><b>利確pips利益:</b> ${profitUSD.toFixed(2)} USD / ${profitJPY.toFixed(0)} 円`;
   }
 
   if (!isNaN(sl)) {
-    const loss = lot * contractSize * (sl / 0.01);
-    resultText += `<br><b>損切りpips損失:</b> ${loss.toFixed(2)} USD`;
+    const lossUSD = lot * contractSize * (sl / 0.01);
+    const lossJPY = lossUSD * usdRate;
+    resultText += `<br><b>損切りpips損失:</b> ${lossUSD.toFixed(2)} USD / ${lossJPY.toFixed(0)} 円`;
   }
 
   document.getElementById("result").innerHTML = resultText;
