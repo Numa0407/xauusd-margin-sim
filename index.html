@@ -3,7 +3,7 @@ index.html
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>XAU/USD 証拠金シミュレーター（円換算・修正版）</title>
+<title>XAU/USD 証拠金シミュレーター（円換算・レート指定版）</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
   body { font-family: 'Segoe UI', Arial, sans-serif; max-width: 700px; margin: 20px auto; background: #f2f2f2; padding: 0 10px; }
@@ -24,7 +24,7 @@ index.html
 </head>
 <body>
 
-<h2>XAU/USD 証拠金シミュレーター（円換算）</h2>
+<h2>XAU/USD 証拠金シミュレーター（円換算・レート指定版）</h2>
 
 <label>純資産額 (円) <span class="required">*</span>
   <input type="number" id="capital" placeholder="例: 1000000">
@@ -52,7 +52,7 @@ index.html
   </select>
 </label>
 
-<label>XAU/USD レート (USD/oz) <span class="required">*</span>
+<label>XAU/USD 現在レート (USD/oz) <span class="required">*</span>
   <input type="number" id="xauRate" placeholder="例: 1950.00" step="0.01">
 </label>
 
@@ -73,12 +73,12 @@ index.html
   </select>
 </label>
 
-<label>利確 (pips)
-  <input type="number" id="takeProfit" placeholder="任意">
+<label>利確レート (USD/oz)
+  <input type="number" id="takeProfitRate" placeholder="任意">
 </label>
 
-<label>損切り (pips)
-  <input type="number" id="stopLoss" placeholder="任意">
+<label>損切りレート (USD/oz)
+  <input type="number" id="stopLossRate" placeholder="任意">
 </label>
 
 <button type="button" onclick="calculate()">計算する</button>
@@ -93,8 +93,8 @@ function calculate() {
   const xauRate = parseFloat(document.getElementById("xauRate").value);
   const usdRate = parseFloat(document.getElementById("usdRate").value);
   const marginRate = parseFloat(document.getElementById("marginRate").value) / 100;
-  const tp = parseFloat(document.getElementById("takeProfit").value);
-  const sl = parseFloat(document.getElementById("stopLoss").value);
+  const tpRate = parseFloat(document.getElementById("takeProfitRate").value);
+  const slRate = parseFloat(document.getElementById("stopLossRate").value);
   const position = document.getElementById("position").value;
 
   if (!capitalJPY || !lot || !xauRate || !usdRate) {
@@ -124,14 +124,14 @@ function calculate() {
   result.push(`<b>ロスカット損失:</b> ${(capitalJPY - maintenanceMargin).toFixed(0)} 円`);
   result.push(`<b>実効レバレッジ:</b> ${(lot * contractSize * xauRate * usdRate / capitalJPY).toFixed(2)} 倍`);
 
-  if (!isNaN(tp)) {
-    const profitJPY = lot * contractSize * (tp / 0.01) * usdRate;
-    result.push(`<b>利確pips利益:</b> ${profitJPY.toFixed(0)} 円`);
+  if (!isNaN(tpRate)) {
+    const profitJPY = position === "buy" ? (tpRate - xauRate) * lot * contractSize * usdRate : (xauRate - tpRate) * lot * contractSize * usdRate;
+    result.push(`<b>利確利益:</b> ${profitJPY.toFixed(0)} 円`);
   }
 
-  if (!isNaN(sl)) {
-    const lossJPY = lot * contractSize * (sl / 0.01) * usdRate;
-    result.push(`<b>損切りpips損失:</b> ${lossJPY.toFixed(0)} 円`);
+  if (!isNaN(slRate)) {
+    const lossJPY = position === "buy" ? (xauRate - slRate) * lot * contractSize * usdRate : (slRate - xauRate) * lot * contractSize * usdRate;
+    result.push(`<b>損切り損失:</b> ${lossJPY.toFixed(0)} 円`);
   }
 
   document.getElementById("result").innerHTML = result.join('<br>');
