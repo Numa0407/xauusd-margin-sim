@@ -2,162 +2,147 @@ index.html
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>XAUUSD 証拠金シミュレーター（XM想定・最終修正版）</title>
-  <style>
-    body { font-family: Arial, sans-serif; background:#f2f2f2; padding:12px; }
-    .box { background:#fff; padding:16px; border-radius:10px; max-width:520px; margin:auto; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
-    h2 { margin:0 0 10px 0; text-align:center; }
-    label { display:block; margin-top:10px; font-size:14px; }
-    input, select { width:100%; padding:10px; margin-top:4px; font-size:16px; }
-    button { margin-top:10px; padding:12px; width:100%; font-size:16px; border:none; border-radius:8px; background:#1976d2; color:#fff; }
-    button.sub { background:#555; }
-    .result { background:#fafafa; padding:14px; margin-top:16px; border-radius:8px; }
-    .row { margin-bottom:6px; font-size:15px; }
-    .danger { color:#c62828; font-weight:bold; }
-    .ok { color:#2e7d32; font-weight:bold; }
-    .note { font-size:13px; color:#555; margin-top:6px; }
-  </style>
+<meta charset="UTF-8">
+<title>XAU/USD 証拠金シミュレーター</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 600px; margin: 20px auto; }
+  label { display: block; margin-top: 10px; }
+  input, select, button { margin-top: 5px; width: 100%; padding: 5px; }
+  .result { margin-top: 15px; padding: 10px; border: 1px solid #ccc; background: #f9f9f9; }
+</style>
 </head>
 <body>
-  <div class="box">
-    <h2>XAUUSD 証拠金シミュレーター（XM / JPY口座）</h2>
 
-    <label>純資産額（JPY）</label>
-    <input type="number" id="equity" oninput="calc()" />
+<h2>XAU/JPY 証拠金シミュレーター</h2>
 
-    <label>売買</label>
-    <select id="side" onchange="calc()">
-      <option value="buy">買い</option>
-      <option value="sell">売り</option>
-    </select>
+<!-- 必須項目 -->
+<label>純資産額 (円)
+  <input type="number" id="capital" placeholder="例: 1000000">
+</label>
 
-    <label>最大レバレッジ</label>
-    <select id="leverage" onchange="calc()">
-      <option>50</option><option>100</option><option>200</option><option>400</option>
-      <option>500</option><option>888</option><option>1000</option>
-    </select>
+<label>買い / 売り
+  <select id="position">
+    <option value="buy">買い</option>
+    <option value="sell">売り</option>
+  </select>
+</label>
 
-    <label>XAUUSD レート</label>
-    <input type="number" step="0.01" id="xau" oninput="calc()" />
+<label>最大レバレッジ
+  <select id="leverage">
+    <option value="1">1倍</option>
+    <option value="2">2倍</option>
+    <option value="5">5倍</option>
+    <option value="10">10倍</option>
+    <option value="25">25倍</option>
+    <option value="50">50倍</option>
+    <option value="100">100倍</option>
+    <option value="200">200倍</option>
+    <option value="500">500倍</option>
+    <option value="1000">1000倍</option>
+  </select>
+</label>
 
-    <label>USDJPY レート</label>
-    <input type="number" step="0.01" id="usdjpy" oninput="calc()" />
+<label>レート (円)
+  <input type="number" id="rateInput" placeholder="レートを取得" step="0.01">
+  <button type="button" onclick="getCurrentRate()">現在レート取得</button>
+</label>
 
-    <button class="sub" onclick="getRates()">現在レート取得（XAUUSD + USDJPY）</button>
+<label>取引数量 (ロット)
+  <input type="number" id="lot" placeholder="例: 0.1" step="0.01">
+</label>
 
-    <label>取引数量（Lot）</label>
-    <input type="number" step="0.01" id="lot" oninput="calc()" />
+<label>ロスカット証拠金維持率 (%) 
+  <select id="marginRate">
+    <option value="20">20%</option>
+    <option value="30">30%</option>
+    <option value="50" selected>50%</option>
+    <option value="70">70%</option>
+  </select>
+</label>
 
-    <label>ロスカット証拠金維持率（%）</label>
-    <select id="cut" onchange="calc()">
-      <option value="20">20</option>
-      <option value="50">50</option>
-    </select>
+<!-- 任意項目 -->
+<label>利確 (pips)
+  <input type="number" id="takeProfit" placeholder="任意">
+</label>
 
-    <label>利確 pips（任意）</label>
-    <input type="number" id="tp" oninput="calc()" />
+<label>損切り (pips)
+  <input type="number" id="stopLoss" placeholder="任意">
+</label>
 
-    <label>損切り pips（任意）</label>
-    <input type="number" id="sl" oninput="calc()" />
+<button type="button" onclick="calculate()">計算する</button>
 
-    <div class="note">※ 1pip = 0.01 / 1Lot = 100oz / JPY口座（XM想定）</div>
-
-    <div class="result" id="result"></div>
-  </div>
+<div class="result" id="result"></div>
 
 <script>
-// ===== 定数 =====
-const CONTRACT_OZ = 100;   // 1Lot = 100oz
-const PIP = 0.01;         // XAUUSD 1pip
-
-const equityEl = document.getElementById('equity');
-const sideEl = document.getElementById('side');
-const leverageEl = document.getElementById('leverage');
-const xauEl = document.getElementById('xau');
-const usdjpyEl = document.getElementById('usdjpy');
-const lotEl = document.getElementById('lot');
-const cutEl = document.getElementById('cut');
-const tpEl = document.getElementById('tp');
-const slEl = document.getElementById('sl');
-const resultEl = document.getElementById('result');
-
-// ===== レート取得（CORS安定：exchangerate.host） =====
-async function getRates(){
-  try{
-    // XAUUSD
-    const r1 = await fetch('https://api.exchangerate.host/latest?base=XAU&symbols=USD');
-    const d1 = await r1.json();
-    const xauusd = d1.rates.USD;
-
-    // USDJPY
-    const r2 = await fetch('https://api.exchangerate.host/latest?base=USD&symbols=JPY');
-    const d2 = await r2.json();
-    const usdjpy = d2.rates.JPY;
-
-    xauEl.value = Number(xauusd).toFixed(2);
-    usdjpyEl.value = Number(usdjpy).toFixed(2);
-    calc();
-  }catch(e){
-    alert('レート取得に失敗しました（通信制限の可能性あり）');
+// 自動レート取得
+async function getCurrentRate() {
+  try {
+    const response = await fetch("https://api.exchangerate.host/convert?from=XAU&to=JPY");
+    const data = await response.json();
+    const rate = data.info.rate;
+    document.getElementById("rateInput").value = rate.toFixed(2);
+  } catch (error) {
+    alert("レート取得に失敗しました。手動入力してください");
+    console.error(error);
   }
 }
 
-function calc(){
-  const equity = Number(equityEl.value);
-  const xau = Number(xauEl.value);
-  const usdjpy = Number(usdjpyEl.value);
-  const lot = Number(lotEl.value);
-  if(!equity || !xau || !usdjpy || !lot) return;
+// 証拠金計算
+function calculate() {
+  const capital = parseFloat(document.getElementById("capital").value);
+  const lot = parseFloat(document.getElementById("lot").value);
+  const leverage = parseFloat(document.getElementById("leverage").value);
+  const rate = parseFloat(document.getElementById("rateInput").value);
+  const marginRate = parseFloat(document.getElementById("marginRate").value);
+  const tp = parseFloat(document.getElementById("takeProfit").value);
+  const sl = parseFloat(document.getElementById("stopLoss").value);
 
-  const lev = Number(leverageEl.value);
-  const cut = Number(cutEl.value);
-  const side = sideEl.value;
-
-  // --- 1pipあたりのJPY価値 ---
-  // 0.01USD × 100oz = 1USD × lot → JPY換算
-  const pipValueJPY = 1 * usdjpy * lot;
-
-  // --- 必要証拠金（JPY）---
-  const margin = xau * CONTRACT_OZ * lot * usdjpy / lev;
-
-  // --- 実効レバレッジ ---
-  const effLev = xau * CONTRACT_OZ * lot * usdjpy / equity;
-
-  // --- 維持率100% ---
-  const loss100 = equity - margin;
-  const pips100 = loss100 / pipValueJPY;
-  const rate100 = side === 'buy'
-    ? xau - pips100 * PIP
-    : xau + pips100 * PIP;
-
-  // --- ロスカット ---
-  const cutEquity = margin * cut / 100;
-  const cutLoss = equity - cutEquity;
-  const cutPips = cutLoss / pipValueJPY;
-  const cutRate = side === 'buy'
-    ? xau - cutPips * PIP
-    : xau + cutPips * PIP;
-
-  let html = '';
-  html += `<div class='row'>必要証拠金：${margin.toFixed(0)} 円</div>`;
-  html += `<div class='row'>合計必要証拠金：${margin.toFixed(0)} 円</div>`;
-  html += `<div class='row'>維持率100%レート：${rate100.toFixed(2)}</div>`;
-  html += `<div class='row'>維持率100%損失：${loss100.toFixed(0)} 円</div>`;
-  html += `<div class='row danger'>ロスカットレート：${cutRate.toFixed(2)}</div>`;
-  html += `<div class='row danger'>ロスカット損失：${cutLoss.toFixed(0)} 円</div>`;
-  html += `<div class='row ok'>実効レバレッジ：${effLev.toFixed(1)} 倍</div>`;
-
-  if(tpEl.value){
-    html += `<div class='row ok'>利確利益：${(Number(tpEl.value)*pipValueJPY).toFixed(0)} 円</div>`;
-  }
-  if(slEl.value){
-    html += `<div class='row danger'>損切損失：${(Number(slEl.value)*pipValueJPY).toFixed(0)} 円</div>`;
+  if (!capital || !lot || !rate) {
+    alert("必須項目を入力してください");
+    return;
   }
 
-  resultEl.innerHTML = html;
+  // 必要証拠金
+  const contractSize = 100; // XAUは通常100oz/lot
+  const requiredMargin = (lot * contractSize * rate) / leverage;
+  const totalMargin = requiredMargin; // 今回は単一ポジション
+  const maintenanceRate = marginRate / 100;
+  const maintenanceMargin = totalMargin * maintenanceRate;
+
+  // ロスカットレート・損失
+  const position = document.getElementById("position").value;
+  let liquidationRate, liquidationLoss;
+  if (position === "buy") {
+    liquidationRate = rate - (capital - maintenanceMargin)/(lot*contractSize);
+    liquidationLoss = capital - maintenanceMargin;
+  } else {
+    liquidationRate = rate + (capital - maintenanceMargin)/(lot*contractSize);
+    liquidationLoss = capital - maintenanceMargin;
+  }
+
+  let resultText = `
+    必要証拠金: ${requiredMargin.toFixed(0)} 円<br>
+    合計必要証拠金: ${totalMargin.toFixed(0)} 円<br>
+    維持率100%レート: ${rate.toFixed(2)} 円<br>
+    維持率100%損失: ${capital.toFixed(0)} 円<br>
+    ロスカットレート: ${liquidationRate.toFixed(2)} 円<br>
+    ロスカット損失: ${liquidationLoss.toFixed(0)} 円<br>
+    レバレッジ: ${leverage}倍
+  `;
+
+  if (!isNaN(tp)) {
+    const profit = lot * contractSize * (tp / 0.01); // pips計算
+    resultText += `<br>利確pips利益: ${profit.toFixed(0)} 円`;
+  }
+
+  if (!isNaN(sl)) {
+    const loss = lot * contractSize * (sl / 0.01);
+    resultText += `<br>損切りpips損失: ${loss.toFixed(0)} 円`;
+  }
+
+  document.getElementById("result").innerHTML = resultText;
 }
 </script>
+
 </body>
 </html>
