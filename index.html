@@ -3,7 +3,7 @@ index.html
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>XAU/JPY 証拠金シミュレーター（スマホ対応版）</title>
+<title>XAU/USD 証拠金シミュレーター（手動入力・スマホ対応）</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
   body { font-family: 'Segoe UI', Arial, sans-serif; max-width: 650px; margin: 20px auto; background: #f2f2f2; padding: 0 10px; }
@@ -24,10 +24,10 @@ index.html
 </head>
 <body>
 
-<h2>XAU/JPY 証拠金シミュレーター</h2>
+<h2>XAU/USD 証拠金シミュレーター</h2>
 
-<label>純資産額 (円) <span class="required">*</span>
-  <input type="number" id="capital" placeholder="例: 1000000">
+<label>純資産額 (USD) <span class="required">*</span>
+  <input type="number" id="capital" placeholder="例: 10000">
 </label>
 
 <label>買い / 売り <span class="required">*</span>
@@ -52,9 +52,9 @@ index.html
   </select>
 </label>
 
-<label>レート (円) <span class="required">*</span>
-  <input type="number" id="rateInput" placeholder="例: 5555.00" step="0.01">
-  <small>XM JPY口座想定</small>
+<label>レート (USD) <span class="required">*</span>
+  <input type="number" id="rateInput" placeholder="例: 1950.00" step="0.01">
+  <small>XM USD口座想定</small>
 </label>
 
 <label>取引数量 (ロット) <span class="required">*</span>
@@ -97,7 +97,7 @@ function calculate() {
     return;
   }
 
-  const contractSize = 100;
+  const contractSize = 100; // XAUは100oz/lot
   const requiredMargin = (lot * contractSize * rate) / leverage;
   const totalMargin = requiredMargin;
   const maintenanceRate = marginRate / 100;
@@ -114,23 +114,23 @@ function calculate() {
   }
 
   let resultText = `
-    <b>必要証拠金:</b> ${requiredMargin.toFixed(0)} 円<br>
-    <b>合計必要証拠金:</b> ${totalMargin.toFixed(0)} 円<br>
-    <b>維持率100%レート:</b> ${rate.toFixed(2)} 円<br>
-    <b>維持率100%損失:</b> ${capital.toFixed(0)} 円<br>
-    <b>ロスカットレート:</b> ${liquidationRate.toFixed(2)} 円<br>
-    <b>ロスカット損失:</b> ${liquidationLoss.toFixed(0)} 円<br>
+    <b>必要証拠金:</b> ${requiredMargin.toFixed(2)} USD<br>
+    <b>合計必要証拠金:</b> ${totalMargin.toFixed(2)} USD<br>
+    <b>維持率100%レート:</b> ${rate.toFixed(2)} USD<br>
+    <b>維持率100%損失:</b> ${capital.toFixed(2)} USD<br>
+    <b>ロスカットレート:</b> ${liquidationRate.toFixed(2)} USD<br>
+    <b>ロスカット損失:</b> ${liquidationLoss.toFixed(2)} USD<br>
     <b>レバレッジ:</b> ${leverage}倍
   `;
 
   if (!isNaN(tp)) {
     const profit = lot * contractSize * (tp / 0.01);
-    resultText += `<br><b>利確pips利益:</b> ${profit.toFixed(0)} 円`;
+    resultText += `<br><b>利確pips利益:</b> ${profit.toFixed(2)} USD`;
   }
 
   if (!isNaN(sl)) {
     const loss = lot * contractSize * (sl / 0.01);
-    resultText += `<br><b>損切りpips損失:</b> ${loss.toFixed(0)} 円`;
+    resultText += `<br><b>損切りpips損失:</b> ${loss.toFixed(2)} USD`;
   }
 
   document.getElementById("result").innerHTML = resultText;
