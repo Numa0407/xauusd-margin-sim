@@ -3,28 +3,28 @@ index.html
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>XAU/USD 証拠金シミュレーター（円換算・レート指定版）</title>
+<title>XAU/USD 証拠金シミュレーター（円換算・レート入力版）</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-  body { font-family: 'Segoe UI', Arial, sans-serif; max-width: 700px; margin: 20px auto; background: #f2f2f2; padding: 0 10px; }
-  h2 { text-align: center; color: #333; font-size: 1.5em; }
-  label { display: block; margin-top: 12px; font-weight: bold; color: #333; font-size: 1em; }
-  input, select, button { margin-top: 5px; width: 100%; padding: 12px; font-size: 1em; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
-  input:focus, select:focus { border-color: #007bff; outline: none; }
-  button { background-color: #007bff; color: #fff; border: none; cursor: pointer; transition: 0.2s; }
-  button:hover { background-color: #0056b3; }
-  .result { margin-top: 20px; padding: 15px; border: 2px solid #007bff; background: #e6f0ff; border-radius: 8px; font-size: 1em; line-height: 1.5; word-wrap: break-word; }
-  .required { color: red; }
-  small { color: #666; font-weight: normal; font-size: 0.9em; }
-  @media (max-width: 400px) {
-    input, select, button { font-size: 0.95em; padding: 10px; }
-    h2 { font-size: 1.3em; }
-  }
+body { font-family: 'Segoe UI', Arial, sans-serif; max-width: 700px; margin: 20px auto; background: #f2f2f2; padding: 0 10px; }
+h2 { text-align: center; color: #333; font-size: 1.5em; }
+label { display: block; margin-top: 12px; font-weight: bold; color: #333; font-size: 1em; }
+input, select, button { margin-top: 5px; width: 100%; padding: 12px; font-size: 1em; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
+input:focus, select:focus { border-color: #007bff; outline: none; }
+button { background-color: #007bff; color: #fff; border: none; cursor: pointer; transition: 0.2s; }
+button:hover { background-color: #0056b3; }
+.result { margin-top: 20px; padding: 15px; border: 2px solid #007bff; background: #e6f0ff; border-radius: 8px; font-size: 1em; line-height: 1.5; word-wrap: break-word; }
+.required { color: red; }
+small { color: #666; font-weight: normal; font-size: 0.9em; }
+@media (max-width: 400px) {
+input, select, button { font-size: 0.95em; padding: 10px; }
+h2 { font-size: 1.3em; }
+}
 </style>
 </head>
 <body>
 
-<h2>XAU/USD 証拠金シミュレーター（円換算・レート指定版）</h2>
+<h2>XAU/USD 証拠金シミュレーター（円換算・レート入力版）</h2>
 
 <label>純資産額 (円) <span class="required">*</span>
   <input type="number" id="capital" placeholder="例: 1000000">
